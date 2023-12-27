@@ -1,0 +1,111 @@
+body {
+	margin: 0;
+	padding: 0px 10px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.header {
+	background-color: #fff;
+	padding: 20px;
+	text-align: center;
+	border: 2px solid black;
+}
+.footer {
+	background-color: #fff;
+	padding: 10px;
+	text-align: center;
+	border: 2px solid black;
+}
+.menu {
+	list-style-type: none;
+	padding: 0;
+	background-color: white;
+	border: 2px solid black;
+	overflow: hidden;
+}
+.menu li {
+	float: left;
+}
+.menu li a {
+	display: block;
+	color: black;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+	margin: 5px;
+	border: 1px solid #000;
+}
+.menu li a:hover:not(.active) {
+	background-color: #b8b8b8;
+}
+.menu li a.active {
+color: white;
+background-color: black;
+font-weight: bolder;
+}
+.main {
+	padding: 16px;
+	background-color: white;
+	border: 2px solid black;
+}
+
+.header, .menu, .main, .footer {
+    margin: 10px 0px;
+}
+
+/*==BOOK TICKETS SECTION==*/
+.find-flight {
+    margin: 5px 5px 10px 5px;
+    border: 1px solid black;
+}
+.list-flight {
+    margin: 10px 5px 5px 5px;
+    border: 1px solid black;
+}
+.info {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 2vw;
+}
+.departure, .destination, .time {
+    padding: 1vw;
+}
+.info select {
+    width: 20vw;
+    height: 40px;
+}
+.find {
+    display: flex;
+    justify-content: flex-end;
+}
+.find > button {
+    background-color: black;
+    color: white;
+    font-size: 1.5vw;
+    margin: 10px;
+    padding: 10px;
+    width: 12vw;
+}
+#date {
+    width: 30vw;
+    font-size: 2vw;
+}
+.title > h1, .list-flight > h1 {
+    text-decoration: underline;
+    padding-left: 1vw;
+}
+
+/*==================*/
+@media screen and (max-width: 600px) {
+    .info {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    .menu li {
+	    float: none;
+	}
+	.find > button {
+        width: 15vw;
+    }
+}

@@ -1,0 +1,108 @@
+body {
+	margin: 0;
+	padding: 0px 10px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.header {
+	background-color: #fff;
+	padding: 20px;
+	text-align: center;
+	border: 2px solid black;
+}
+.footer {
+    background-color: #fff;
+	padding: 10px;
+	text-align: center;
+	border: 2px solid black;
+}
+.menu {
+	list-style-type: none;
+	padding: 0;
+	background-color: white;
+	border: 2px solid black;
+	overflow: hidden;
+}
+.menu li {
+	float: left;
+}
+.menu li a {
+	display: block;
+	color: black;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+	margin: 5px;
+	border: 1px solid #000;
+}
+.menu li a:hover:not(.active) {
+	background-color: #b8b8b8;
+}
+.menu li a.active {
+	color: white;
+	background-color: black;
+	font-weight: bolder;
+}
+.main {
+	padding: 16px;
+	background-color: white;
+	border: 2px solid black;
+}
+
+.header, .menu, .main, .footer {
+	margin: 10px 0px;
+}
+
+
+/*== LOGIN SECTION ==*/
+section {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	/*height: 100vh;*/
+}
+section form {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background-color: white;
+	border: 0px solid black;
+	padding: 10px;
+	margin: 10px;
+	max-width: 40%;
+	min-width: 25%;
+	font-size:calc(12px + 1.2vw);
+	font-weight: bold;
+}
+section form input[type=text], input[type=password] {
+	padding: 10px;
+	margin: 10px;
+	border: 2px solid black;
+	border-radius: 5px;
+	width: calc(100% - 22px) !important;;
+}
+section form input[type=submit] {
+	padding: 10px;
+	margin: 10px;
+	border: none;
+	background-color: black;
+	color: white;
+	border-radius: 5px;
+	width: 100%;
+	cursor: pointer;
+	font-size:calc(12px + 1.4vw);
+}
+
+/*==================*/
+@media screen and (max-width: 600px) {
+    .menu li {
+	    float: none;
+	}
+
+	section form {
+		width: 90%;
+		max-width: 90%;
+		min-width: 90%;
+	}
+}

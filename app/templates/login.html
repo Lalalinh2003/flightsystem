@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- meta section -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- page config section -->
+	<title>Hệ thống quản lý chuyến bay.</title>
+
+	<!-- css section -->
+	<link rel="stylesheet" href="{{url_for('static', filename='css/login.css')}} ">
+
+	<!-- jquery section -->
+	<script src="{{url_for('static', filename='js/jquery-3.6.0.min.js')}} "></script>
+
+</head>
+<body>
+
+	<div class="header">
+		<h1>HỆ THỐNG QUẢN LÝ CHUYỂN BAY</h1>
+	</div>
+
+	<ul class="menu">
+		<li><a href="{{url_for('home')}}">Trang Chủ</a></li>
+		<li><a class="active" href="{{url_for('login')}}">Đăng Nhập</a></li>
+		<li><a href="{{url_for('booktickets')}}">Đặt Vé</a></li>
+		<li><a href="#ticket_sales">Bán Vé</a></li>
+		<li><a href="#flight_management">Quản Lý Chuyến Bay</a></li>
+		<li><a href="#Flight_route_Management">Quản Lý Tuyến Bay</a></li>
+		<li><a href="#report">Thông Kê Báo Cáo</a></li>
+	</ul>
+
+	<div class="main">
+		<section>
+			<form method="post">
+				<label for="username">Tên đăng nhập:</label>
+				<input type="text" id="username" name="username" required>
+				<label for="password">Mật khẩu:</label>
+				<input type="password" id="password" name="password" required>
+				<input type="submit" value="Đăng Nhập">
+			</form>
+		</section>
+	</div>
+
+	<div class="footer">
+		<p>Bản quyền © 2023 Nhóm 1.</p>
+	</div>
+
+</body>
+</html>
