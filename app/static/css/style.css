@@ -1,0 +1,242 @@
+/*=== GENERAL ==*/
+body {
+    margin: 0;
+    padding: 0px 10px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+    background-color: #fff;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid black;
+}
+
+.footer {
+    background-color: #fff;
+    padding: 10px;
+    text-align: center;
+    border: 2px solid black;
+}
+
+.menu {
+    list-style-type: none;
+    padding: 0;
+    background-color: white;
+    border: 2px solid black;
+    overflow: hidden;
+}
+
+.menu li {
+    float: left;
+}
+
+.menu li a {
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    margin: 5px;
+    border: 1px solid #000;
+}
+
+.menu li a:hover:not(.active) {
+    background-color: #b8b8b8;
+}
+
+.menu li a.active {
+    color: white;
+    background-color: black;
+    font-weight: bolder;
+}
+
+.main {
+    padding: 16px;
+    background-color: white;
+    border: 2px solid black;
+}
+
+.header,
+.menu,
+.main,
+.footer {
+    margin: 10px 0px;
+}
+
+section {
+    min-height: 40vh;
+}
+
+button {
+    background-color: black;
+    color: white;
+    font-size: 1.2vw;
+    margin: 0px;
+    padding: 10px 30px;
+    width: auto;
+}
+
+.area-buttons {
+    width: 100%;
+}
+
+/*== HOME SECTION ==*/
+.section-home {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;    
+    font-size: calc(16px + 0.5vw);
+    text-align: center;
+}
+
+/*== LOGIN SECTION ==*/
+.section-login {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;        
+}
+
+.section-login form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    border: 0px solid black;
+    padding: 10px;
+    margin: 10px;
+    max-width: 40%;
+    min-width: 25%;
+    font-size: calc(12px + 1.2vw);
+    font-weight: bold;
+}
+
+.section-login form input[type=text],
+input[type=password] {
+    padding: 10px;
+    margin: 15px 10px;
+    border: 2px solid black;
+    border-radius: 5px;
+    width: calc(100% - 22px) !important;
+    height: 40px;
+}
+
+.section-login form input[type=submit] {
+    padding: 10px;
+    margin: 10px;
+    border: none;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 100%;
+    cursor: pointer;
+    font-size: calc(12px + 1.4vw);
+}
+
+/*==BOOK TICKETS SECTION==*/
+.section-find-flight {
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    align-items: left;        
+    margin: 5px 5px 10px 5px;
+    border: 1px solid black;
+    padding: 10px;
+    min-height: 20% !important;
+}
+
+.section-list-flight {
+    margin: 5px 5px 10px 5px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+.info {
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    font-size: calc(12px + 1vw);
+    align-items: baseline;
+}
+
+.info > div {
+    padding: 1vw;
+}
+
+.info select {
+    width: 20vw;
+    height: 40px;
+    font-size: calc(12px + 1vw);
+}
+
+.find {
+    display: flex;
+    justify-content: flex-end;
+}
+
+#startDate {
+    width: 30vw;
+    font-size: calc(12px + 1vw);
+    height: 37px;
+}
+
+#bt-find-flight {
+    margin: 0px 20px;
+}
+
+.title > h1,
+.list-flight > h1 {
+    text-decoration: underline;
+    padding: 5px !important;
+    margin: 5px !important;
+    font-size: calc(20px + 1vw);;
+}
+
+/*=== MEDIA SETTING ==*/
+@media screen and (max-width: 600px) {
+    .info {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .info div {
+        width: 100%;
+    }    
+
+    .info select, .info label {
+        width: 100%;
+        height: 30px;
+        font-size: 16px;
+        margin: 0px;
+    }
+
+    #startDate {
+        width: calc(100% - 5px);
+        height: 30px;
+        font-size: 16px;
+        margin: 0px 0px 0px 0px;
+    }
+    
+    #bt-find-flight {
+        width: 100%;
+        font-size: 16px;
+        margin: 5px;
+        padding: 10px;
+    }
+
+    .menu li {
+        float: none;
+    }
+
+    .title > h1,
+    .list-flight > h1 {
+        text-decoration: underline;
+        padding: 0px !important;
+        margin: 0px !important;
+        font-size: 20px;
+    }    
+}

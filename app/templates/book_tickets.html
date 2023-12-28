@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% set active_page = "book_tickets" %}
+{% block title %}Book tickets Page{% endblock %}
+{% block content %}
+<section class="section-find-flight">
+    <div class="title">
+        <h1>Tìm chuyến bay</h1>
+    </div>
+    <div class="info">
+        <div class="departure">
+            <label>Từ</label>
+            <select name="from" id="from">
+                <option value="TP HCM">TPHCM (SGN)</option>
+                <option value="Ha Noi">Hà Nội (HAN)</option>
+                <option value="Da Lat">Đà Lạt (DLI)</option>
+                <option value="Da Nang">Đà Nẵng (DAD)</option>
+            </select>
+        </div>
+        <div class="destination">
+            <label>Đến</label>
+            <select name="to" id="to">
+                <option value="TP HCM">TPHCM (SGN)</option>
+                <option value="Ha Noi">Hà Nội (HAN)</option>
+                <option value="Da Lat">Đà Lạt (DLI)</option>
+                <option value="Da Nang">Đà Nẵng (DAD)</option>
+            </select>
+        </div>
+        <div class="">
+            <label>Ngày đi</label>
+            <input type="date" id="startDate" name="date">
+        </div>
+    </div>
+
+    <div class="area-buttons">
+        <button id="bt-find-flight">Tìm</button>
+    </div>
+</section>
+
+<section class="section-list-flight">
+    <div class="title">
+        <h1>Danh sách các chuyến bay</h1>
+    </div>    
+    
+</section>
+{% endblock %}

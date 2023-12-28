@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<!-- meta section -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- page config section -->
+	<title>Hệ thống quản lý chuyến bay.</title>
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
+	
+	<!-- css section -->
+	<link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
+
+	<!-- jquery section -->
+	<script src="{{url_for('static', filename='js/jquery-3.6.0.min.js')}} "></script>
+
+</head>
+
+<body>
+
+	<div class="header">
+		<h1>HỆ THỐNG QUẢN LÝ CHUYỂN BAY</h1>
+	</div>
+
+	<ul class="menu">
+		<li><a class="{{ 'active' if active_page == 'home' else '' }}" href="{{url_for('home')}}">Trang Chủ</a></li>
+		<li><a class="{{ 'active' if active_page == 'login' else '' }}" href="{{url_for('login')}}">Đăng Nhập</a></li>
+		<li><a class="{{ 'active' if active_page == 'book_tickets' else '' }}" href="{{url_for('book_tickets')}}">Đặt
+				Vé</a></li>
+		<li><a class="{{ 'active' if active_page == 'ticket_sales' else '' }}" href="#">Bán Vé</a></li>
+		<li><a class="{{ 'active' if active_page == 'flight_management' else '' }}" href="#">Quản Lý Chuyến Bay</a></li>
+		<li><a class="{{ 'active' if active_page == 'flight_route_management' else '' }}" href="#">Quản Lý Tuyến Bay</a>
+		</li>
+		<li><a class="{{ 'active' if active_page == 'report' else '' }}" href="#">Thông Kê Báo Cáo</a></li>
+	</ul>
+
+	<div class="main">
+		{% block content %}
+		{% endblock %}
+	</div>
+
+	<div class="footer">
+		<p>Bản quyền © 2023 Nhóm 16.</p>
+	</div>
+
+</body>
+
+</html>
