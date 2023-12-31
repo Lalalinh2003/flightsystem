@@ -81,6 +81,17 @@ button {
     width: 100%;
 }
 
+.hidden {
+    display: none !important;
+}
+
+/*== MESSATION SECTION ==*/
+.section-message {
+    height: auto;
+    min-height: auto;
+    border: 1px solid #000;
+}
+
 /*== HOME SECTION ==*/
 .section-home {
     display: flex;

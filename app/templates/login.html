@@ -3,7 +3,7 @@
 {% block title %}Login Page{% endblock %}
 {% block content %}
 <section class="section-login">
-	<form method="post">
+	<form method="post" action="{{ url_for('login') }}">
 		<label for="username">Tên đăng nhập:</label>
 		<input type="text" id="username" name="username" required>
 		<label for="password">Mật khẩu:</label>
