@@ -1,38 +1,29 @@
 {% extends "base.html" %}
 {% set active_page = "book_tickets" %}
-{% block title %}Book tickets Page{% endblock %}
+{% block title %}Book tickets page{% endblock %}
 {% block content %}
 <section class="section-find-flight">
     <div class="title">
         <h1>Tìm chuyến bay</h1>
     </div>
     <div class="info">
-        <div class="departure">
-            <label>Từ</label>
-            <select name="from" id="from">
-                <option value="TP HCM">TPHCM (SGN)</option>
-                <option value="Ha Noi">Hà Nội (HAN)</option>
-                <option value="Da Lat">Đà Lạt (DLI)</option>
-                <option value="Da Nang">Đà Nẵng (DAD)</option>
-            </select>
-        </div>
-        <div class="destination">
-            <label>Đến</label>
-            <select name="to" id="to">
-                <option value="TP HCM">TPHCM (SGN)</option>
-                <option value="Ha Noi">Hà Nội (HAN)</option>
-                <option value="Da Lat">Đà Lạt (DLI)</option>
-                <option value="Da Nang">Đà Nẵng (DAD)</option>
-            </select>
-        </div>
-        <div class="">
-            <label>Ngày đi</label>
-            <input type="date" id="startDate" name="date">
-        </div>
-    </div>
+        <form method="POST" action="{{ url_for('book_tickets') }}">
+            {{ formSearchFlight.hidden_tag() }}
 
-    <div class="area-buttons">
-        <button id="bt-find-flight">Tìm</button>
+            <div class="form-field">
+                <div class="form-group">
+                    {{ formSearchFlight.origin.label }} {{ formSearchFlight.origin() }}
+                </div>
+                <div class="form-group">
+                    {{ formSearchFlight.destination.label }} {{ formSearchFlight.destination() }}
+                </div>
+                <div class="form-group">
+                    {{ formSearchFlight.departure_date.label }} {{ formSearchFlight.departure_date() }}
+                </div>
+            </div>
+
+            <button type="submit" id="bt-find-flight">Search</button>
+        </form>
     </div>
 </section>
 
@@ -40,6 +31,70 @@
     <div class="title">
         <h1>Danh sách các chuyến bay</h1>
     </div>    
-    
+    <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Route</th>
+            <th>origin</th>
+            <th>destination</th>
+            <th>Departure Time</th>
+            <th>Arrival Time</th>
+            <th>Number of Seats</th>
+            <th>Price Ticket</th>
+            <th>Book Tickets</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for flight in flights %}
+          <tr>
+            <td>{{ flight.code }}</td>
+            <td>{{ flight.route_id }}</td>
+            <td>{{ flight.route.origin.name }}</td>
+            <td>{{ flight.route.destination.name }}</td>
+            <td>{{ flight.departure_time }}</td>
+            <td>{{ flight.arrival_time }}</td>
+            <td>
+                <select name="num_seats" id="num_seats_{{ flight.id }}" onchange="updatePrice('{{ flight.id }}')">
+                    <option value="{{ flight.price_seat_class_1 }}">Seats class 1 - {{ flight.available_seats_class_1 }}</option>
+                    <option value="{{ flight.price_seat_class_2 }}">Seats class 2 - {{ flight.available_seats_class_2 }}</option>
+                </select>                
+            </td>
+            <td>
+                <span id="price_{{ flight.id }}">{{ flight.price_seat_class_1 }}</span>
+            </td>
+            <td>
+                <form id="form_buy_ticket_{{ flight.id }}" action="{{ url_for('buy_tickets') }}" method="post">
+                    <input type="hidden" name="flight_id" value="{{ flight.id }}">
+                    <input type="hidden" name="flight_code" value="{{ flight.code }}">
+                    <input type="hidden" name="route_id" value="{{ flight.route_id }}">
+                    <input type="hidden" name="origin_name" value="{{ flight.route.origin.name }}">
+                    <input type="hidden" name="destination_name" value="{{ flight.route.destination.name }}">
+                    <input type="hidden" name="departure_time" value="{{ flight.departure_time }}">
+                    <input type="hidden" name="arrival_time" value="{{ flight.arrival_time }}">
+                    <input type="hidden" name="seat_class" id="seat_class_{{ flight.id }}" value="Seats class 1">
+                    <input type="hidden" name="seat_price" id="seat_price_{{ flight.id }}" value="{{ flight.price_seat_class_1 }}">
+                    <!-- -->
+                    <input type="submit" value="BUY">
+                </form>
+            </td>            
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>    
 </section>
+
+<script>
+    function updatePrice(id) {
+        var seat_class = $("#seat_class_" + id);
+        var seat_price = $("#seat_price_" + id);
+
+        var num_seats = $("#num_seats_" + id);
+        var price = $("#price_" + id);
+
+        price.html(num_seats.val());
+        seat_class.val($.trim(num_seats.find('option:selected').text().split('-')[0]));
+        seat_price.val(num_seats.val());
+    }
+</script>
 {% endblock %}

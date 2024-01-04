@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% set active_page = "book_tickets" %}
+{% block title %}Buy ticket page{% endblock %}
+{% block content %}
+<section class="section-buy-tickets">
+    <div class="title">
+        <h1>Thông tin chuyến bay</h1>
+    </div>     
+	
+	<table>
+		<tr>
+            <th>Mã tuyến bay</th>
+			<th>Mã chuyến bay</th>
+			<th>Điểm xuất phát</th>
+			<th>Điểm đến</th>
+			<th>Thời gian khởi hành</th>
+			<th>Thời gian đến</th>
+			<th>Hạng vé</th>
+			<th>Giá vé</th>
+		</tr>
+		<tr>
+            <td>{{ routeId }}</td>
+			<td>{{ flightCode }}</td>
+			<td>{{ originName }}</td>
+			<td>{{ destinationName }}</td>
+			<td>{{ departureTime }}</td>
+			<td>{{ arrivalTime }}</td>
+			<td>{{ seatClass }}</td>
+			<td>{{ seatPrice }}</td>
+		</tr>
+	</table>
+
+  
+    <form action="{{ url_for('save_ticket') }}" method="post">
+        <div class="title">
+            <h1>Thông tin khách hàng</h1>
+        </div>   
+                
+        <input type="hidden" name="flightId" value="{{ flightId }}">
+        <input type="hidden" name="flightCode" value="{{ flightCode }}">
+        <input type="hidden" name="routeId" value="{{ routeId }}">
+        <input type="hidden" name="originName" value="{{ originName }}">
+        <input type="hidden" name="destinationName" value="{{ destinationName }}">
+        <input type="hidden" name="departureTime" value="{{ departureTime }}">
+        <input type="hidden" name="arrivalTime" value="{{ arrivalTime }}">
+        <input type="hidden" name="seatClass" value="{{ seatClass }}">
+        <input type="hidden" name="seatPrice" value="{{ seatPrice }}">
+        <!-- -->
+        <label for="fullName">Họ và tên:</label>
+        <input type="text" id="fullName" name="fullName"><br>
+
+        <label for="identityCard">CMND / CCCD:</label>
+        <input type="text" id="identityCard" name="identityCard"><br>
+
+        <label for="phoneNumber">Điện thoại:</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber"><br>
+
+        <label for="address">Địa chỉ:</label>
+        <input type="text" id="address" name="address"><br>
+
+        <div class="title">
+            <h1>Thanh toán trực tuyến</h1>
+        </div>  
+
+        <label for="bankNumber">Số tài khoản:</label>
+        <input type="text" id="bankNumber" name="bankNumber"><br>        
+        <!-- -->
+        <input type="submit" value="BUY">
+    </form>
+</section>
+{% endblock %}
