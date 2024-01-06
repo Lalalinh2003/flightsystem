@@ -124,6 +124,33 @@ table {
     text-align: center;
 }
 
+/*== TICKETS SECTION ==*/
+.section-tickets {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
+    background-color: white;
+    border: 0px solid black;
+    padding: 10px 0px;
+    margin: 10px 0px;
+    max-width: 40%;
+    min-width: 25%;
+    font-size: calc(10px + 0.5vw);
+    font-weight: bold;    
+}
+
+.section-tickets input[type=text], 
+.section-tickets input[type=password], 
+.section-tickets input[type=tel] {
+    padding: 10px;
+    margin: 10px 5px;
+    border: 2px solid black;
+    border-radius: 5px;
+    width: calc(100% - 22px) !important;
+    height: 20px;
+}
+
 /*== BUY TICKETS SECTION ==*/
 .section-buy-tickets form {
     display: flex;
@@ -140,7 +167,9 @@ table {
     font-weight: bold;
 }
 
-.section-buy-tickets form input[type=text], input[type=password], input[type=tel] {
+.section-buy-tickets form input[type=text], 
+.section-buy-tickets form input[type=password], 
+.section-buy-tickets form input[type=tel] {
     padding: 10px;
     margin: 10px 5px;
     border: 2px solid black;

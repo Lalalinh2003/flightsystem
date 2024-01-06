@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% set active_page = "book_tickets" %}
-{% block title %}Book tickets page{% endblock %}
+{% set active_page = "sales_tickets" %}
+{% block title %}Sales tickets page{% endblock %}
 {% block content %}
 <section class="section-find-flight">
     <div class="title">
@@ -65,7 +65,7 @@
             </td>
             <td>
                 <form id="form_buy_ticket_{{ flight.id }}" action="{{ url_for('buy_tickets') }}" method="post">
-                    <input type="hidden" name="employee_id" value="">
+                    <input type="hidden" name="employee_id" value="{{ employeeId }}">
                     <input type="hidden" name="flight_id" value="{{ flight.id }}">
                     <input type="hidden" name="flight_code" value="{{ flight.code }}">
                     <input type="hidden" name="route_id" value="{{ flight.route_id }}">

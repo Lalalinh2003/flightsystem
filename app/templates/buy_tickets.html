@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% set active_page = "book_tickets" %}
+{% set active_page = referrerPage %}
 {% block title %}Buy ticket page{% endblock %}
 {% block content %}
 <section class="section-buy-tickets">
@@ -35,7 +35,8 @@
         <div class="title">
             <h1>Thông tin khách hàng</h1>
         </div>   
-                
+        
+        <input type="hidden" name="employeeId" value="{{ employeeId }}">
         <input type="hidden" name="flightId" value="{{ flightId }}">
         <input type="hidden" name="flightCode" value="{{ flightCode }}">
         <input type="hidden" name="routeId" value="{{ routeId }}">
@@ -45,6 +46,7 @@
         <input type="hidden" name="arrivalTime" value="{{ arrivalTime }}">
         <input type="hidden" name="seatClass" value="{{ seatClass }}">
         <input type="hidden" name="seatPrice" value="{{ seatPrice }}">
+        <input type="hidden" name="referrerPage" value="{{ referrerPage }}">
         <!-- -->
         <label for="fullName">Họ và tên:</label>
         <input type="text" id="fullName" name="fullName"><br>

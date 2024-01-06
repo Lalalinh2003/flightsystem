@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set active_page = referrerPage %}
+{% block title %}Ticket page{% endblock %}
+{% block content %}
+<section class="section-tickets">
+    <div class="title">
+        <h1>Vé chuyến bay</h1>
+    </div>     
+	
+    <label for="flightCode">Chuyến bay:</label>
+    <input type="text" id="flightCode" name="flightCode" readonly value="{{ flight.code }}"><br>
+
+    <label for="fullName">Hành khách:</label>
+    <input type="text" id="fullName" name="fullName" readonly value="{{ customer.full_name }}"><br>
+
+    <label for="identityCard">CMND / CCCD:</label>
+    <input type="text" id="identityCard" name="identityCard" readonly value="{{ customer.identity_card }}"><br>
+
+    <label for="phoneNumber">Điện thoại:</label>
+    <input type="tel" id="phoneNumber" name="phoneNumber" readonly value="{{ customer.phone_number }}"><br>
+
+    <label for="ticketSeatClass">Hạng vé:</label>
+    <input type="text" id="ticketSeatClass" name="ticketSeatClass" readonly value="{{ ticket.seat_class }}"><br>
+
+    <label for="ticketSeatClass">Giá tiền:</label>
+    <input type="text" id="ticketSeatClass" name="ticketSeatClass" readonly value="{{ ticket.seat_price }}"><br>
+
+</section>
+{% endblock %}

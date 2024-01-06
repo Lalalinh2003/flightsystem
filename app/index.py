@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+import gettext
 from flask import Flask, render_template, redirect, url_for, request, flash
 from urllib.parse import quote
 from sqlalchemy import Column, Integer, String, or_
@@ -7,10 +8,11 @@ from sqlalchemy.orm import relationship
 from flask_admin import Admin, BaseView, AdminIndexView, expose
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from flask_admin.contrib.sqla import ModelView
-from wtforms import DateField, FloatField, SelectField, StringField
+from wtforms import DateField, FloatField, SelectField, StringField, HiddenField
 from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
 from sqlalchemy import and_
+from wtforms_sqlalchemy.fields import QuerySelectField
 
 flightapp = Flask(__name__)
 
@@ -109,7 +111,9 @@ def book_tickets():
 @flightapp.route("/buy_tickets", methods=['POST'])
 def buy_tickets():
     if request.method == 'POST':
-        #print(request.form)
+        #print(referrer = request.referrer)
+        referrerPage = request.referrer.split("/")[-1]
+        employeeId = request.form['employee_id']
         flightId = request.form['flight_id']
         flightCode = request.form['flight_code']
         routeId = request.form['route_id']
@@ -120,7 +124,7 @@ def buy_tickets():
         seatClass = request.form['seat_class']
         seatPrice = request.form['seat_price']
 
-        return render_template('buy_tickets.html', flightId=flightId, flightCode=flightCode, routeId=routeId, originName=originName, destinationName=destinationName, departureTime=departureTime, arrivalTime=arrivalTime, seatClass=seatClass, seatPrice=seatPrice)
+        return render_template('buy_tickets.html', flightId=flightId, flightCode=flightCode, routeId=routeId, originName=originName, destinationName=destinationName, departureTime=departureTime, arrivalTime=arrivalTime, seatClass=seatClass, seatPrice=seatPrice, employeeId=employeeId, referrerPage=referrerPage)
     
     return redirect(url_for('book_tickets'))
 
@@ -135,13 +139,16 @@ def save_ticket():
     #arrivalTime = request.form['arrivalTime']
     seatClass = request.form['seatClass']
     seatPrice = request.form['seatPrice']
-    #employeeId = request.form['employeeId']
-
+    employeeId = request.form['employeeId']
     fullName = request.form['fullName']
     identityCard = request.form['identityCard']
     phoneNumber = request.form['phoneNumber']
     address = request.form['address']
     bankNumber = request.form['bankNumber']
+    referrerPage = request.form['referrerPage']
+
+    if not (employeeId):
+        employeeId = None    
 
     #-- save customer
     customer = Customer(full_name=fullName, identity_card=identityCard, address=address, phone_number=phoneNumber, bank_number=bankNumber)
@@ -150,11 +157,72 @@ def save_ticket():
     customerId = customer.id
 
     #-- save ticket
-    ticket = Ticket(flight_id=flightId, customer_id=customerId, employee_id=None, seat_class=seatClass, seat_price=seatPrice)
+    ticket = Ticket(flight_id=flightId, customer_id=customerId, employee_id=employeeId, seat_class=seatClass, seat_price=seatPrice)
     db.session.add(ticket)
     db.session.commit()
 
-    return redirect('/')
+    #-- update seat of flight
+    flight = Flight.query.get(flightId)
+    if seatClass == "Seats class 1":
+        flight.available_seats_class_1 = flight.available_seats_class_1 - 1
+    else:
+        flight.available_seats_class_2 = flight.available_seats_class_2 - 1
+    db.session.commit()
+
+    #--
+    return render_template("tickets.html", flight=flight, ticket=ticket, customer=customer, employeeId=employeeId, referrerPage=referrerPage)
+
+
+@flightapp.route("/sales_tickets", methods=['GET', 'POST'])
+@login_required
+def sales_tickets():
+    if request.method == 'GET':
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        
+    employeeId = current_user.employee.id
+    airport_origin = request.args.get('airport_origin')
+    airport_destination = request.args.get('airport_destination')
+    airport_departure_date = request.args.get('airport_departure_date')
+
+    twelve_hours_ago = datetime.now() - timedelta(hours=10)
+    print(twelve_hours_ago)
+    flights = Flight.query.filter(and_(Flight.departure_time >= twelve_hours_ago), or_(Flight.available_seats_class_1 > 0, Flight.available_seats_class_2 > 0)).all()    
+
+    formSearchFlight = FormSearchFlight()
+    if formSearchFlight.validate_on_submit():
+        origin_id = formSearchFlight.origin.data
+        destination_id = formSearchFlight.destination.data
+        departure_date = formSearchFlight.departure_date.data
+        #print(origin_id)
+        #print(destination_id)
+        #print(departure_date)
+        
+        # Do something with the search parameters
+        #flights = Flight.query.filter_by(origin_id=origin_id, destination_id=destination_id).all()
+        flights = Flight.query.join(Route, Flight.route_id == Route.id).filter(Route.origin_id==origin_id, Route.destination_id==destination_id, Flight.departure_time >= twelve_hours_ago, or_(Flight.available_seats_class_1 > 0, Flight.available_seats_class_2 > 0)).all()
+
+    return render_template("sales_tickets.html", current_user=current_user, flights=flights, formSearchFlight=formSearchFlight, employeeId=employeeId)
+
+@flightapp.route("/tickets", methods=['POST'])
+def tickets():
+    if request.method == 'POST':
+        #print(referrer = request.referrer)
+        referrerPage = request.referrer.split("/")[-1]
+        employeeId = request.form['employee_id']
+        flightId = request.form['flight_id']
+        flightCode = request.form['flight_code']
+        routeId = request.form['route_id']
+        originName = request.form['origin_name']
+        destinationName = request.form['destination_name']
+        departureTime = request.form['departure_time']
+        arrivalTime = request.form['arrival_time']
+        seatClass = request.form['seat_class']
+        seatPrice = request.form['seat_price']
+
+        return render_template('tickets.html', flightId=flightId, flightCode=flightCode, routeId=routeId, originName=originName, destinationName=destinationName, departureTime=departureTime, arrivalTime=arrivalTime, seatClass=seatClass, seatPrice=seatPrice, employeeId=employeeId, referrerPage=referrerPage)
+    
+    return redirect(url_for('book_tickets'))
 
 #==========================
 #==========================
@@ -224,6 +292,19 @@ class Route(db.Model):
     destination = db.relationship('Airport', foreign_keys=[destination_id])
 
 class RouteForm(FlaskForm):
+    origin = QuerySelectField('Sân bay xuất phát', query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
+    destination = QuerySelectField('Sân bay đích', query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
+    distance = FloatField('Khoảng Cách', validators=[DataRequired()])
+    #================================
+    """
+    with flightapp.app_context():
+        origin = SelectField('Origin Airport', coerce=int, choices=[(airport.id, airport.name) for airport in Airport.query.all()])
+        destination = SelectField('Destination Airport', coerce=int, choices=[(airport.id, airport.name) for airport in Airport.query.all()])
+        distance = FloatField('Distance')    
+    """        
+    #================================
+    """
+    routeId = HiddenField(validators=[DataRequired()])
     origin = SelectField('Sân bay xuất phát', validators=[DataRequired()], coerce=int)
     destination = SelectField('Sân bay đích', validators=[DataRequired()], coerce=int)
     distance = FloatField('Khoảng Cách', validators=[DataRequired()])
@@ -232,6 +313,7 @@ class RouteForm(FlaskForm):
         super(RouteForm, self).__init__(*args, **kwargs)
         self.origin.choices = [(airport.id, airport.name) for airport in Airport.query.all()]
         self.destination.choices = [(airport.id, airport.name) for airport in Airport.query.all()]
+    """
 
 class RouteModelView(AuthenticatedView):
     can_create = True
@@ -239,23 +321,36 @@ class RouteModelView(AuthenticatedView):
     can_delete = True
     column_list = ['id', 'origin.name', 'destination.name', 'distance']
     #form_columns = ['origin_id', 'destination_id', 'distance']
-    form = RouteForm
     column_searchable_list = ['origin_id', 'destination_id', 'distance']
     column_filters = ['origin_id', 'destination_id', 'distance']
     column_labels = {
         'origin.name': 'Sân bay xuất phát',
         'destination.name': 'Sân bay đích',    
         'distance': 'Khoảng Cách'
-    }       
+    }
     page_size = 50   
 
+    form = RouteForm
+
+    """        
     def edit_form(self, obj):
-        form = super(RouteModelView, self).edit_form(obj=obj)
-        form.origin.default = obj.origin.id
-        form.destination.default = obj.destination.id
-        form.distance.default = obj.distance
-        form.process()
-        return form
+        try:
+            print(obj)
+            form = super(RouteModelView, self).edit_form(obj)
+            form.routeId.data = obj.id
+            form.origin.data = obj.origin_id
+            form.destination.data = obj.destination_id
+            form.distance.data = obj.distance
+            return form 
+        except Exception as ex:
+            print(ex)
+            flash(gettext('Failed to edit product. %(error)s', error=str(ex)), 'error')
+    
+
+    def on_model_change(self, form, model, is_created):
+        db.session.add(model)
+        db.session.commit()
+    """           
 
 class Flight(db.Model):
     __tablename__ = 'flight'
@@ -353,7 +448,7 @@ class AdminView(AdminIndexView):
     
     def inaccessible_callback(self, name, **kwargs):
         # redirect to login page if user doesn't have access
-        return redirect(url_for('login', next=request.url))    
+        return redirect(url_for('login', next=request.url))
 
 class Ticket(db.Model):
     __tablename__ = 'ticket'
@@ -423,17 +518,134 @@ with flightapp.app_context():
         Route(origin_id='13', destination_id='1', distance='1704.2'),
         Route(origin_id='6', destination_id='7', distance='92.9'),
         Route(origin_id='7', destination_id='6', distance='92.9'),
+        Route(origin_id='1', destination_id='2', distance='1200.2'),
+        Route(origin_id='1', destination_id='3', distance='1300.3'),
+        Route(origin_id='1', destination_id='4', distance='1400.4'),
+        Route(origin_id='1', destination_id='5', distance='1500.5'),
+        Route(origin_id='1', destination_id='6', distance='1600.6'),
+        Route(origin_id='1', destination_id='7', distance='1700.7'),
+        Route(origin_id='1', destination_id='8', distance='1800.8'),
+        Route(origin_id='1', destination_id='9', distance='1900.9'),
     ]
     db.session.add_all(routes)
     db.session.commit()
 
     flights = [
-        Flight(code='FLY001', route_id='1', departure_time='2023-12-03 01:00:00', arrival_time='2023-12-03 03:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='10', available_seats_class_2='100', price_seat_class_1='1000000', price_seat_class_2='100000'),
-        Flight(code='FLY002', route_id='2', departure_time='2024-01-04 01:00:00', arrival_time='2024-01-04 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
-        Flight(code='FLY003', route_id='3', departure_time='2024-01-05 01:00:00', arrival_time='2024-01-05 03:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
-        Flight(code='FLY004', route_id='4', departure_time='2024-01-06 01:00:00', arrival_time='2024-01-06 03:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
+        Flight(code='FLY001', route_id='1', departure_time='2023-12-01 01:00:00', arrival_time='2023-12-01 02:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='0', available_seats_class_2='90', price_seat_class_1='1000000', price_seat_class_2='100000'),
+        Flight(code='FLY002', route_id='2', departure_time='2023-12-02 02:00:00', arrival_time='2024-01-02 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
+        Flight(code='FLY003', route_id='3', departure_time='2023-12-03 03:00:00', arrival_time='2024-01-03 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
+        Flight(code='FLY004', route_id='4', departure_time='2023-12-04 04:00:00', arrival_time='2024-01-04 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
+        Flight(code='FLY005', route_id='5', departure_time='2023-12-05 05:00:00', arrival_time='2024-01-05 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
+        Flight(code='FLY006', route_id='6', departure_time='2023-12-06 06:00:00', arrival_time='2024-01-06 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
+        Flight(code='FLY007', route_id='7', departure_time='2023-12-07 07:00:00', arrival_time='2024-01-07 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
+        Flight(code='FLY008', route_id='8', departure_time='2023-12-08 08:00:00', arrival_time='2024-01-08 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
+        Flight(code='FLY009', route_id='9', departure_time='2023-12-09 09:00:00', arrival_time='2024-01-09 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
+        Flight(code='FLY010', route_id='10', departure_time='2023-12-10 10:00:00', arrival_time='2024-01-10 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='100', available_seats_class_2='1000', price_seat_class_1='10000000', price_seat_class_2='1000000'),        
+        
+        Flight(code='FLY011', route_id='1', departure_time='2024-01-06 01:00:00', arrival_time='2023-12-06 02:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='0', available_seats_class_2='90', price_seat_class_1='1000000', price_seat_class_2='100000'),
+        Flight(code='FLY012', route_id='2', departure_time='2024-01-07 02:00:00', arrival_time='2024-01-07 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
+        Flight(code='FLY013', route_id='3', departure_time='2024-01-08 03:00:00', arrival_time='2024-01-08 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
+        Flight(code='FLY014', route_id='4', departure_time='2024-01-09 04:00:00', arrival_time='2024-01-09 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
+        Flight(code='FLY015', route_id='5', departure_time='2024-01-10 05:00:00', arrival_time='2024-01-10 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
+        Flight(code='FLY016', route_id='6', departure_time='2024-01-11 06:00:00', arrival_time='2024-01-11 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
+        Flight(code='FLY017', route_id='7', departure_time='2024-01-12 07:00:00', arrival_time='2024-01-12 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
+        Flight(code='FLY018', route_id='8', departure_time='2024-01-13 08:00:00', arrival_time='2024-01-13 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
+        Flight(code='FLY019', route_id='9', departure_time='2024-01-14 09:00:00', arrival_time='2024-01-14 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
+        Flight(code='FLY020', route_id='10', departure_time='2024-01-15 10:00:00', arrival_time='2024-01-15 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='10000000', price_seat_class_2='1000000')
     ]
     db.session.add_all(flights)
+    db.session.commit()    
+
+    customers = [
+        Customer(full_name='Khách hàng số 001' ,identity_card='ID0001' ,address='Địa chỉ 001' ,phone_number='0000000001' ,bank_number='BANK0001' ),
+        Customer(full_name='Khách hàng số 002' ,identity_card='ID0002' ,address='Địa chỉ 002' ,phone_number='0000000002' ,bank_number='BANK0002' ),
+        Customer(full_name='Khách hàng số 003' ,identity_card='ID0003' ,address='Địa chỉ 003' ,phone_number='0000000003' ,bank_number='BANK0003' ),
+        Customer(full_name='Khách hàng số 004' ,identity_card='ID0004' ,address='Địa chỉ 004' ,phone_number='0000000004' ,bank_number='BANK0004' ),
+        Customer(full_name='Khách hàng số 005' ,identity_card='ID0005' ,address='Địa chỉ 005' ,phone_number='0000000005' ,bank_number='BANK0005' ),
+        Customer(full_name='Khách hàng số 006' ,identity_card='ID0006' ,address='Địa chỉ 006' ,phone_number='0000000006' ,bank_number='BANK0006' ),
+        Customer(full_name='Khách hàng số 007' ,identity_card='ID0007' ,address='Địa chỉ 007' ,phone_number='0000000007' ,bank_number='BANK0007' ),
+        Customer(full_name='Khách hàng số 008' ,identity_card='ID0008' ,address='Địa chỉ 008' ,phone_number='0000000008' ,bank_number='BANK0008' ),
+        Customer(full_name='Khách hàng số 009' ,identity_card='ID0009' ,address='Địa chỉ 009' ,phone_number='0000000009' ,bank_number='BANK0009' ),
+        Customer(full_name='Khách hàng số 010' ,identity_card='ID0010' ,address='Địa chỉ 010' ,phone_number='0000000010' ,bank_number='BANK0010' ),
+        Customer(full_name='Khách hàng số 011' ,identity_card='ID0011' ,address='Địa chỉ 011' ,phone_number='0000000011' ,bank_number='BANK0011' ),
+        Customer(full_name='Khách hàng số 012' ,identity_card='ID0012' ,address='Địa chỉ 012' ,phone_number='0000000012' ,bank_number='BANK0012' ),
+        Customer(full_name='Khách hàng số 013' ,identity_card='ID0013' ,address='Địa chỉ 013' ,phone_number='0000000013' ,bank_number='BANK0013' ),
+        Customer(full_name='Khách hàng số 014' ,identity_card='ID0014' ,address='Địa chỉ 014' ,phone_number='0000000014' ,bank_number='BANK0014' ),
+        Customer(full_name='Khách hàng số 015' ,identity_card='ID0015' ,address='Địa chỉ 015' ,phone_number='0000000015' ,bank_number='BANK0015' ),
+        Customer(full_name='Khách hàng số 016' ,identity_card='ID0016' ,address='Địa chỉ 016' ,phone_number='0000000016' ,bank_number='BANK0016' ),
+        Customer(full_name='Khách hàng số 017' ,identity_card='ID0017' ,address='Địa chỉ 017' ,phone_number='0000000017' ,bank_number='BANK0017' ),
+        Customer(full_name='Khách hàng số 018' ,identity_card='ID0018' ,address='Địa chỉ 018' ,phone_number='0000000018' ,bank_number='BANK0018' ),
+        Customer(full_name='Khách hàng số 019' ,identity_card='ID0019' ,address='Địa chỉ 019' ,phone_number='0000000019' ,bank_number='BANK0019' ),
+        Customer(full_name='Khách hàng số 020' ,identity_card='ID0020' ,address='Địa chỉ 020' ,phone_number='0000000020' ,bank_number='BANK0020' ),
+    ]
+    db.session.add_all(customers)
+    db.session.commit()    
+
+    tickets = [
+        Ticket(flight_id='1',  customer_id='1', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='2', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='3', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='4', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='5', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='6', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='7', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='8', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1',  customer_id='9', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1', customer_id='10', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='1', customer_id='11', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='12', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='13', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='14', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='15', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='16', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='17', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='18', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='19', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='1', customer_id='20', employee_id=None, seat_class='Seats class 2', seat_price='100000'),     
+
+        Ticket(flight_id='11',  customer_id='1', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='2', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='3', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='4', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='5', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='6', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='7', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='8', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11',  customer_id='9', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11', customer_id='10', employee_id=None, seat_class='Seats class 1', seat_price='1000000'),
+        Ticket(flight_id='11', customer_id='11', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='12', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='13', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='14', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='15', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='16', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='17', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='18', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='19', employee_id=None, seat_class='Seats class 2', seat_price='100000'),
+        Ticket(flight_id='11', customer_id='20', employee_id=None, seat_class='Seats class 2', seat_price='100000'),     
+
+        Ticket(flight_id='20',  customer_id='1', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='2', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='3', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='4', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='5', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='6', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='7', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='8', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20',  customer_id='9', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20', customer_id='10', employee_id=2, seat_class='Seats class 1', seat_price='10000000'),
+        Ticket(flight_id='20', customer_id='11', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='12', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='13', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='14', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='15', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='16', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='17', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='18', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='19', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
+        Ticket(flight_id='20', customer_id='20', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),                
+    ]
+    db.session.add_all(tickets)
     db.session.commit()    
 
 #==========================
