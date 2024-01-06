@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% set active_page = "report" %}
+{% block title %}Report Page{% endblock %}
+{% block content %}
+<section class="section-report">
+    <form method="POST" action="{{ url_for('report') }}">
+        <label for="month">Month:</label>
+        <select name="month" id="month">
+            {% for monthIndex in range(1, 13) %}
+            <option value="{{ monthIndex }}" {% if monthIndex == month %}selected{% endif %}>{{ monthIndex }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="year">Year:</label>
+        <select name="year" id="year">
+            {% for yearIndex in range(now.year - 2, now.year + 1) %}
+            <option value="{{ yearIndex }}" {% if yearIndex == year %}selected{% endif %}>{{ yearIndex }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <input id="sbReport" type="submit" value="Xem báo cáo">
+    </form>
+
+    <h1>Thống kê tháng {{ month }} năm {{ year }}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Tuyến Bay</th>
+                <th>Doanh Thu</th>
+                <th>Số Lượt Bay</th>
+                <th>Tỷ Lệ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route_id, airport_origin_name, airport_destination_name, revenue, flights, revenue_rate in report_data %}
+                <tr>
+                    <td>(ID {{ route_id }}) {{airport_origin_name}} → {{airport_destination_name}}</td>
+                    <td>{{ revenue }}</td>
+                    <td>{{ flights }}</td>
+                    <td>{{ revenue_rate }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+              <th id="total" colspan="4" style="text-align: left;font-weight: bolder;">Tổng doanh thu: {{ total_revenue }}</th>
+            </tr>
+           </tfoot>        
+    </table>
+
+</section>
+{% endblock %}

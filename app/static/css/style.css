@@ -151,6 +151,26 @@ table {
     height: 20px;
 }
 
+/*== REPORT SECTION ==*/
+.section-report {
+    border: 0px solid black;
+    font-size: calc(10px + 0.5vw);
+}
+
+.section-report select {
+    width: 200px;
+    height: 50px;
+    line-height: 50px;
+    padding: 5px;
+    margin: 5px;
+    font-size: calc(10px + 0.5vw);
+}
+
+#sbReport {
+    margin: 15px 0px;
+}
+
+
 /*== BUY TICKETS SECTION ==*/
 .section-buy-tickets form {
     display: flex;

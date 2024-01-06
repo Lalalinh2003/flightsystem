@@ -1,8 +1,8 @@
 from datetime import datetime, time, timedelta
 import gettext
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, jsonify, render_template, redirect, url_for, request, flash
 from urllib.parse import quote
-from sqlalchemy import Column, Integer, String, or_
+from sqlalchemy import Column, Integer, String, func, or_
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_admin import Admin, BaseView, AdminIndexView, expose
@@ -223,6 +223,56 @@ def tickets():
         return render_template('tickets.html', flightId=flightId, flightCode=flightCode, routeId=routeId, originName=originName, destinationName=destinationName, departureTime=departureTime, arrivalTime=arrivalTime, seatClass=seatClass, seatPrice=seatPrice, employeeId=employeeId, referrerPage=referrerPage)
     
     return redirect(url_for('book_tickets'))
+
+@flightapp.route("/report", methods=['GET', 'POST'])
+@login_required
+def report():
+    now=datetime.now()
+
+    if request.method == 'POST':
+        month = request.form['month']
+        year = request.form['year']
+    else:
+        month = now.strftime("%m")   
+        year = now.strftime("%Y")
+    
+
+    # Tạo bí danh cho bảng Airport
+    airport_alias_1 = db.aliased(Airport)
+    airport_alias_2 = db.aliased(Airport)
+
+    #-- SELECT * FROM `flight` f INNER JOIN `ticket` t ON f.id = t.flight_id WHERE `departure_time` LIKE '2024-01%' ORDER BY `departure_time` ASC
+    #-- SELECT f.route_id, sum(t.seat_price) FROM `flight` f INNER JOIN `ticket` t ON f.id = t.flight_id WHERE `departure_time` LIKE '2024-01%' group by(f.route_id)   
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") 
+    revenue_by_route = db.session.query(Flight.route_id, airport_alias_1.name, airport_alias_2.name, func.sum(Ticket.seat_price)).\
+        join(Ticket, Flight.id == Ticket.flight_id).\
+        join(Route, Flight.route_id == Route.id).\
+        join(airport_alias_1, Route.origin_id == airport_alias_1.id).\
+        join(airport_alias_2, Route.destination_id == airport_alias_2.id).\
+        filter(db.extract('year', Flight.departure_time) == year, db.extract('month', Flight.departure_time) == month).\
+        group_by(Flight.route_id).all()
+    # In nội dung truy vấn
+    #print(revenue_by_route.statement)
+    print(revenue_by_route)
+
+
+    flights_by_route = db.session.query(Flight.route_id, func.count(Flight.id)).\
+        filter(db.extract('year', Flight.departure_time) == year, db.extract('month', Flight.departure_time) == month).\
+        group_by(Flight.route_id).all()
+    print("CCCCCCCCCCCCCCCCCCCCCC")
+    #total_revenue = sum(revenue for _, _, _, revenue in revenue_by_route)
+    total_revenue = sum(t[-1] for t in revenue_by_route)
+    print("DDDDDDDDDDDDDDDDDDDDDDDDD")
+    # Tính toán tỷ lệ doanh thu theo route
+    report_data = []
+    for route_id, airport_origin_name, airport_destination_name, revenue in revenue_by_route:
+        flights = next((flights for route, flights in flights_by_route if route == route_id), 0)
+        revenue_rate = (revenue / total_revenue) * 100 if total_revenue > 0 else 0
+        report_data.append((route_id, airport_origin_name, airport_destination_name, revenue, flights, revenue_rate))
+
+    return render_template('report.html', report_data=report_data, total_revenue=total_revenue, month=int(month), year=int(year), now=now)
+    #return render_template('report.html', total_seat_price=total_seat_price, total_flights=total_flights, route_percentages=route_percentages, now=now)
+    #return render_template('report.html', month=month, year=year, route_prices=route_prices, now=now)
 
 #==========================
 #==========================
@@ -532,26 +582,28 @@ with flightapp.app_context():
 
     flights = [
         Flight(code='FLY001', route_id='1', departure_time='2023-12-01 01:00:00', arrival_time='2023-12-01 02:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='0', available_seats_class_2='90', price_seat_class_1='1000000', price_seat_class_2='100000'),
-        Flight(code='FLY002', route_id='2', departure_time='2023-12-02 02:00:00', arrival_time='2024-01-02 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
-        Flight(code='FLY003', route_id='3', departure_time='2023-12-03 03:00:00', arrival_time='2024-01-03 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
-        Flight(code='FLY004', route_id='4', departure_time='2023-12-04 04:00:00', arrival_time='2024-01-04 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
-        Flight(code='FLY005', route_id='5', departure_time='2023-12-05 05:00:00', arrival_time='2024-01-05 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
-        Flight(code='FLY006', route_id='6', departure_time='2023-12-06 06:00:00', arrival_time='2024-01-06 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
-        Flight(code='FLY007', route_id='7', departure_time='2023-12-07 07:00:00', arrival_time='2024-01-07 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
-        Flight(code='FLY008', route_id='8', departure_time='2023-12-08 08:00:00', arrival_time='2024-01-08 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
-        Flight(code='FLY009', route_id='9', departure_time='2023-12-09 09:00:00', arrival_time='2024-01-09 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
-        Flight(code='FLY010', route_id='10', departure_time='2023-12-10 10:00:00', arrival_time='2024-01-10 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='100', available_seats_class_2='1000', price_seat_class_1='10000000', price_seat_class_2='1000000'),        
+        Flight(code='FLY002', route_id='2', departure_time='2023-12-02 02:00:00', arrival_time='2023-01-02 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
+        Flight(code='FLY003', route_id='3', departure_time='2023-12-03 03:00:00', arrival_time='2023-01-03 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
+        Flight(code='FLY004', route_id='4', departure_time='2023-12-04 04:00:00', arrival_time='2023-01-04 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
+        Flight(code='FLY005', route_id='5', departure_time='2023-12-05 05:00:00', arrival_time='2023-01-05 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
+        Flight(code='FLY006', route_id='6', departure_time='2023-12-06 06:00:00', arrival_time='2023-01-06 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
+        Flight(code='FLY007', route_id='7', departure_time='2023-12-07 07:00:00', arrival_time='2023-01-07 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
+        Flight(code='FLY008', route_id='8', departure_time='2023-12-08 08:00:00', arrival_time='2023-01-08 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
+        Flight(code='FLY009', route_id='9', departure_time='2023-12-09 09:00:00', arrival_time='2023-01-09 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
+        Flight(code='FLY010', route_id='10', departure_time='2023-12-10 10:00:00', arrival_time='2023-01-10 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='100', available_seats_class_2='1000', price_seat_class_1='10000000', price_seat_class_2='1000000'),        
         
-        Flight(code='FLY011', route_id='1', departure_time='2024-01-06 01:00:00', arrival_time='2023-12-06 02:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='0', available_seats_class_2='90', price_seat_class_1='1000000', price_seat_class_2='100000'),
-        Flight(code='FLY012', route_id='2', departure_time='2024-01-07 02:00:00', arrival_time='2024-01-07 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
-        Flight(code='FLY013', route_id='3', departure_time='2024-01-08 03:00:00', arrival_time='2024-01-08 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
-        Flight(code='FLY014', route_id='4', departure_time='2024-01-09 04:00:00', arrival_time='2024-01-09 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
-        Flight(code='FLY015', route_id='5', departure_time='2024-01-10 05:00:00', arrival_time='2024-01-10 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
-        Flight(code='FLY016', route_id='6', departure_time='2024-01-11 06:00:00', arrival_time='2024-01-11 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
-        Flight(code='FLY017', route_id='7', departure_time='2024-01-12 07:00:00', arrival_time='2024-01-12 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
-        Flight(code='FLY018', route_id='8', departure_time='2024-01-13 08:00:00', arrival_time='2024-01-13 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
-        Flight(code='FLY019', route_id='9', departure_time='2024-01-14 09:00:00', arrival_time='2024-01-14 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
-        Flight(code='FLY020', route_id='10', departure_time='2024-01-15 10:00:00', arrival_time='2024-01-15 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='10000000', price_seat_class_2='1000000')
+        Flight(code='FLY011', route_id='1', departure_time='2024-01-11 01:00:00', arrival_time='2024-01-11 02:30:00', num_seats_class_1='10', num_seats_class_2='100', available_seats_class_1='0', available_seats_class_2='90', price_seat_class_1='1000000', price_seat_class_2='100000'),
+        Flight(code='FLY012', route_id='2', departure_time='2024-01-12 02:00:00', arrival_time='2024-01-12 03:30:00', num_seats_class_1='20', num_seats_class_2='200', available_seats_class_1='20', available_seats_class_2='200', price_seat_class_1='2000000', price_seat_class_2='200000'),
+        Flight(code='FLY013', route_id='3', departure_time='2024-01-13 03:00:00', arrival_time='2024-01-13 04:30:00', num_seats_class_1='30', num_seats_class_2='300', available_seats_class_1='30', available_seats_class_2='300', price_seat_class_1='3000000', price_seat_class_2='300000'),
+        Flight(code='FLY014', route_id='4', departure_time='2024-01-14 04:00:00', arrival_time='2024-01-14 05:30:00', num_seats_class_1='40', num_seats_class_2='400', available_seats_class_1='40', available_seats_class_2='400', price_seat_class_1='4000000', price_seat_class_2='400000'),
+        Flight(code='FLY015', route_id='5', departure_time='2024-01-15 05:00:00', arrival_time='2024-01-15 06:30:00', num_seats_class_1='50', num_seats_class_2='500', available_seats_class_1='50', available_seats_class_2='500', price_seat_class_1='5000000', price_seat_class_2='500000'),
+        Flight(code='FLY016', route_id='6', departure_time='2024-01-16 06:00:00', arrival_time='2024-01-16 07:30:00', num_seats_class_1='60', num_seats_class_2='600', available_seats_class_1='60', available_seats_class_2='600', price_seat_class_1='6000000', price_seat_class_2='600000'),
+        Flight(code='FLY017', route_id='7', departure_time='2024-01-17 07:00:00', arrival_time='2024-01-17 08:30:00', num_seats_class_1='70', num_seats_class_2='700', available_seats_class_1='70', available_seats_class_2='700', price_seat_class_1='7000000', price_seat_class_2='700000'),
+        Flight(code='FLY018', route_id='8', departure_time='2024-01-18 08:00:00', arrival_time='2024-01-18 09:30:00', num_seats_class_1='80', num_seats_class_2='800', available_seats_class_1='80', available_seats_class_2='800', price_seat_class_1='8000000', price_seat_class_2='800000'),
+        Flight(code='FLY019', route_id='9', departure_time='2024-01-19 09:00:00', arrival_time='2024-01-19 10:30:00', num_seats_class_1='90', num_seats_class_2='900', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='9000000', price_seat_class_2='900000'),
+        Flight(code='FLY020', route_id='10', departure_time='2024-01-20 10:00:00', arrival_time='2024-01-20 11:30:00', num_seats_class_1='100', num_seats_class_2='1000', available_seats_class_1='90', available_seats_class_2='900', price_seat_class_1='10000000', price_seat_class_2='1000000'),
+
+        Flight(code='FLY021', route_id='1', departure_time='2024-01-21 01:00:00', arrival_time='2024-01-21 02:30:00', num_seats_class_1='5', num_seats_class_2='15', available_seats_class_1='4', available_seats_class_2='14', price_seat_class_1='5000000', price_seat_class_2='150000'),
     ]
     db.session.add_all(flights)
     db.session.commit()    
@@ -644,6 +696,9 @@ with flightapp.app_context():
         Ticket(flight_id='20', customer_id='18', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
         Ticket(flight_id='20', customer_id='19', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),
         Ticket(flight_id='20', customer_id='20', employee_id=2, seat_class='Seats class 2', seat_price='1000000'),                
+
+        Ticket(flight_id='21', customer_id='1', employee_id=1, seat_class='Seats class 1', seat_price='5000000'),
+        Ticket(flight_id='21', customer_id='2', employee_id=2, seat_class='Seats class 2', seat_price='150000'),
     ]
     db.session.add_all(tickets)
     db.session.commit()    

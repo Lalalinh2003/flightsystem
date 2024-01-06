@@ -28,6 +28,7 @@
 		<li><a class="{{ 'active' if active_page == 'home' else '' }}" href="{{url_for('home')}}">Trang Chủ</a></li>
 		<li><a class="{{ 'active' if active_page == 'book_tickets' else '' }}" href="{{url_for('book_tickets')}}">Đặt Vé</a></li>
 		<li><a class="{{ 'active' if active_page == 'sales_tickets' else '' }}" href="{{url_for('sales_tickets')}}">Bán Vé</a></li>
+		<li><a class="{{ 'active' if active_page == 'report' else '' }}" href="{{url_for('report')}}">Thống Kê</a></li>
 		<li><a class="" href="/admin">Quản Lý</a></li>
 		<li><a class="{{ 'hidden' if current_user.is_authenticated == true else 'active' if active_page == 'login' else '' }}" href="{{url_for('login')}}">Đăng Nhập</a></li>
 		<li><a class="{{ '' if current_user.is_authenticated == true else 'hidden' }}" href="{{url_for('logout')}}">{{current_user.username}} - Đăng Xuất</a></li>
